@@ -23,8 +23,4 @@ cpanm Novel::Robot
 
 perl lofter.pl 'chuweizhiyu' '时之足'
 
-只下载前3页
-
-perl lofter.pl 'chuweizhiyu' '时之足' 3
-
 ![lofter.png](lofter.png)
