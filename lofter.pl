@@ -74,11 +74,12 @@ sub get_lofter_book {
         deal_content_url => sub {
             my ($h) = @_;
             my $r = scraper {
-                process '//div[@class="txtcont"]', 'content' => 'HTML';
+                process '//div[@class="m-post "]', 'content' => 'HTML';
+                process '//div[@class="txtcont"]', 'cont1' => 'HTML';
                 process '//div[@class="content"]', 'cont2' => 'HTML';
             };
             my $res=$r->scrape($h);
-            return $res->{content} || $res->{cont2};
+            return $res->{content} || $res->{cont1} || $res->{cont2};
         }, 
         reverse_content_list => 1, 
     );
