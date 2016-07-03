@@ -74,7 +74,7 @@ sub get_lofter_book {
         deal_content_url => sub {
             my ($h) = @_;
             my $r = scraper {
-                process '//div[@class="m-post "]', 'content' => 'HTML';
+                process '//div[starts-with(@class,"m-post ")]', 'content' => 'HTML';
                 process '//div[@class="txtcont"]', 'cont1' => 'HTML';
                 process '//div[@class="content"]', 'cont2' => 'HTML';
             };
