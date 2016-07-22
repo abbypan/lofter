@@ -16,7 +16,7 @@ binmode( STDIN,  ":encoding(console_in)" );
 binmode( STDOUT, ":encoding(console_out)" );
 binmode( STDERR, ":encoding(console_out)" );
 
-my ( $writer, $book) = @ARGV;
+my ( $writer, $book ) = @ARGV;
 
 $writer = decode( locale => $writer );
 $book   = decode( locale => $book );
@@ -43,64 +43,72 @@ sub get_lofter_book {
 
     my $xs = Novel::Robot->new( site => 'txt', type => 'txt' );
 
-    my $post_r = $xs->{parser}->get_tiezi_ref($url,
-        parse_info => sub { { writer=>$writer, book=>$book, title=>$book } },
+    my $post_r = $xs->{parser}->get_tiezi_ref(
+        $url,
+        parse_info =>
+          sub { { writer => $writer, book => $book, title => $book } },
         parse_content => sub {
             my ($h) = @_;
             my $r = scraper {
                 process '//h2//a',
-                'chapter[]' => {
+                  'chapter[]' => {
                     title => 'TEXT',
                     url   => '@href'
-                };
+                  };
                 result 'chapter';
             };
             my $chap_r = $r->scrape($h);
             return unless ( $chap_r and @$chap_r );
-            my @chap_tidy = grep { $_->{title}=~/$book/
-                and $_->{url}=~m#/post/# } @$chap_r;
+            my @chap_tidy =
+              grep { $_->{title} =~ /$book/ and $_->{url} =~ m#/post/# }
+              @$chap_r;
             return \@chap_tidy;
-        }, 
-        #min_page_num=>2, 
-        #max_page_num => 3, 
+        },
+
+        #min_page_num=>2,
+        #max_page_num => 3,
         #stop_iter=>sub {
         #my ($info, $data_list, $i, %o) = @_;
         #return 1 if($i>4);
         #},
         next_url => sub {
-            my ($start_u, $i, $h) = @_;
+            my ( $start_u, $i, $h ) = @_;
             return "$start_u&page=$i";
-        }, 
+        },
         deal_content_url => sub {
             my ($h) = @_;
             my $r = scraper {
-                process '//div[starts-with(@class,"m-post ")]', 'content' => 'HTML';
+                process '//div[starts-with(@class,"m-post ")]',
+                  'content' => 'HTML';
                 process '//div[@class="txtcont"]', 'cont1' => 'HTML';
                 process '//div[@class="content"]', 'cont2' => 'HTML';
             };
-            my $res=$r->scrape($h);
+            my $res = $r->scrape($h);
             return $res->{content} || $res->{cont1} || $res->{cont2};
-        }, 
-        reverse_content_list => 1, 
+        },
+        reverse_content_list => 1,
     );
 
     if ( $opt->{txt} ) {
         $xs->{packer}->main(
+
             #\%book_data,
-            $post_r, 
+            $post_r,
             output   => $opt->{txt},
             with_toc => 0
         );
-        return $opt->{txt};
+
+        #return $opt->{txt};
+        return $post_r;
     }
 
     my $d = '';
     $xs->{packer}->main(
-        $post_r, 
+        $post_r,
         output   => \$d,
         with_toc => 0
     );
     $d =~ s/\n/\r\n/sg;
     $post_r->{data} = $d;
-    return $post_r, 
+    return $post_r,;
 }
