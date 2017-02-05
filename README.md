@@ -21,6 +21,10 @@ cpanm Novel::Robot
 
 全部下载
 
-perl lofter.pl 'chuweizhiyu' '时之足'
+perl lofter.pl -w 'chuweizhiyu' -b '时之足'
+
+从第三章开始下载
+
+perl lofter.pl -w 'chuweizhiyu' -b '时之足' -i 3
 
 ![lofter.png](lofter.png)
