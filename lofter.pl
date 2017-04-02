@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use utf8;
+use lib '../Novel-Robot-Browser/lib';
 
 use Encode::Locale;
 use Encode;
@@ -44,69 +45,72 @@ sub get_lofter_book {
     $b = uc( unpack( "H*", encode( "utf8", $book ) ) );
     $b =~ s/(..)/%$1/g;
     my $url = "$BASE_URL/search/?q=$b";
-    print $url, "\n";
+    #print $url, "\n";
 
-    my $xs = Novel::Robot->new( site => 'txt', type => 'txt' );
+    my $xs = Novel::Robot->new( site=>'txt', type => 'txt', verbose=>1 );
 
     my $post_r = $xs->{parser}->get_tiezi_ref(
         $url,
-        min_chapter_num => $min,
-        max_chapter_num => $max,
-        parse_info =>
+        verbose=>1, 
+        min_item_num => $min,
+        max_item_num => $max,
+        info_sub =>
           sub { { writer => $writer, book => $book, title => $book } },
-        parse_content => sub {
-            my ($h) = @_;
-            my $r = scraper {
-                process '//ul[@class="m-list"]//li',
+          content_sub => sub {
+              my ($h) = @_;
+              my $r = scraper {
+                  process '//ul[@class="m-list"]//li',
                   'artical[]' => { url => 'HTML', };
-                process '//h2//a',
+                  process '//h2//a',
                   'chapter[]' => {
-                    title => 'TEXT',
-                    url   => '@href'
+                      title => 'TEXT',
+                      url   => '@href'
                   };
-                process '//a[@class="title"]',
+                  process '//a[@class="title"]',
                   'chap[]' => {
-                    title => 'TEXT',
-                    url   => '@href'
+                      title => 'TEXT',
+                      url   => '@href'
                   };
-            };
-            my $res_r = $r->scrape($h);
-            my $chap_r =
+              };
+              my $res_r = $r->scrape($h);
+              my $chap_r =
               ( $res_r->{artical} and @{ $res_r->{artical} } )
               ? $res_r->{artical}
               : ( $res_r->{chapter} and @{ $res_r->{chapter} } )
               ? $res_r->{chapter}
               : ( $res_r->{chap} and @{ $res_r->{chap} } ) ? $res_r->{chap}
               :                                              undef;
-            return unless ( $chap_r and @$chap_r );
-            if ( $res_r->{artical} ) {
-                ( $_->{title} ) = $_->{url} =~ m#<strong>(.+?)</strong>#s
+              return unless ( $chap_r and @$chap_r );
+              if ( $res_r->{artical} ) {
+                  ( $_->{title} ) = $_->{url} =~ m#<strong>(.+?)</strong>#s
                   for @$chap_r;
-                ( $_->{url} ) = $_->{url} =~ m#<a href="([^"]+)">#s
+                  ( $_->{url} ) = $_->{url} =~ m#<a href="([^"]+)">#s
                   for @$chap_r;
-            }
-            my @chap_t = grep { $_->{url} =~ m#/post/# } @$chap_r;
+              }
+              my @chap_t = grep { $_->{url} =~ m#/post/# } @$chap_r;
 
-            #print Dumper(@chap_t);
-            return unless (@chap_t);
-            my @chap_tidy = grep { $_->{title} =~ /$book/i } @chap_t;
-            return \@chap_tidy;
-        },
 
+              return  unless (@chap_t);
+              my @chap_tidy = grep { $_->{title} =~ /$book/i } @chap_t;
+              return \@chap_tidy;
+          },
+          stop_sub => sub { return; }, 
         #min_page_num=>2,
         #max_page_num => 3,
         #stop_iter=>sub {
         #my ($info, $data_list, $i, %o) = @_;
         #return 1 if($i>4);
         #},
-        next_url => sub {
+        next_url_sub => sub {
             my ( $start_u, $i, $h ) = @_;
-            print "$start_u&page=$i\n";
+            #print "$start_u&page=$i\n";
             return "$start_u&page=$i";
         },
-        deal_content_url => sub {
-            my ($h) = @_;
-            my $r = scraper {
+        item_sub => sub {
+            my ($r) = @_;
+            #print $r->{url},"\n";
+            my $c = $xs->{browser}->request_url($r->{url});
+            my $s = scraper {
                 process '//div[starts-with(@class,"m-post ")]',
                   'content' => 'HTML';
                 process '//div[@class="txtcont"]',  'cont1' => 'HTML';
@@ -114,13 +118,9 @@ sub get_lofter_book {
                 process '//div[@class="postdesc"]', 'cont3' => 'HTML';
                 process '//div[@class="article"]',  'cont4' => 'HTML';
             };
-            my $res = $r->scrape($h);
-            return
-                 $res->{content}
-              || $res->{cont1}
-              || $res->{cont2}
-              || $res->{cont3}
-              || $res->{cont4};
+            my $res = $s->scrape(\$c);
+            $r->{content} = $res->{content} || $res->{cont1} || $res->{cont2} || $res->{cont3} || $res->{cont4};
+            return $r;
         },
         reverse_content_list => 1,
     );
