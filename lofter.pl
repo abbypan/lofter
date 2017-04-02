@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 use utf8;
-use lib '../Novel-Robot-Browser/lib';
 
 use Encode::Locale;
 use Encode;
