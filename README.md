@@ -6,7 +6,7 @@ download post from lofter.com  ,  convert to  txt
 
 ## 注意
 
-废弃，原有功能并入[Novel::Robot](../Novel-Robot) 的run_novel
+废弃，原有功能并入[Novel::Robot](https://github.com/abbypan/Novel-Robot) 的run_novel
 
     run_novel.pl -s lofter -T txt -w chuweizhiyu -b 时之足
     run_novel.pl -s lofter -T txt -w chuweizhiyu -b 时之足 -G "-i 3-"
